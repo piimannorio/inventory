@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="ja" style="background:#0f0f0f;">
-<head>
-<meta charset="UTF-8">
+<!-- saved from url=(0049)file:///C:/Users/cuiwe/Downloads/inventory_3.html -->
+<html lang="ja" style="background:#0f0f0f;"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>在庫管理 — ゲストハウス</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="./inventory_files/css2" rel="stylesheet">
 <style>
   :root {
     --bg: #0f0f0f; --surface: #1a1a1a; --surface2: #242424;
@@ -20,7 +20,7 @@
   #last-updated { font-size: 12px; color: var(--muted); }
   .settings-btn { margin-left: auto; padding: 6px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; color: #f0ece4; font-size: 12px; cursor: pointer; }
 
-  .house-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 20px; scrollbar-width: none; }
+  .house-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; padding-left: 2px; margin-bottom: 20px; scrollbar-width: none; scroll-padding-left: 2px; }
   .house-tabs::-webkit-scrollbar { display: none; }
   .tab { flex-shrink: 0; padding: 7px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; font-size: 13px; color: #9a9690; cursor: pointer; position: relative; }
   .tab.active { background: var(--accent); color: #0f0f0f; border-color: var(--accent); font-weight: 700; }
@@ -100,7 +100,7 @@
 
 <header>
   <h1>STOCK MGMT</h1>
-  <span id="last-updated">読込中...</span>
+  <span id="last-updated">更新: 16:32</span>
   <button class="settings-btn" onclick="openSettings()">⚙ 設定</button>
 </header>
 
@@ -125,12 +125,116 @@
   </div>
 </div>
 
-<div class="house-tabs" id="houseTabs"></div>
+<div class="house-tabs" id="houseTabs"><div class="tab active">全拠点</div><div class="tab">彩<div class="alert-dot" style="background: rgb(248, 113, 113);"></div></div><div class="tab">御所西<div class="alert-dot" style="background: rgb(248, 113, 113);"></div></div><div class="tab">拠点D<div class="alert-dot" style="background: rgb(248, 113, 113);"></div></div><div class="tab">拠点E<div class="alert-dot" style="background: rgb(248, 113, 113);"></div></div><div class="tab">清<div class="alert-dot" style="background: rgb(248, 113, 113);"></div></div></div>
 
 <div class="all-view active" id="allView">
   <div class="section-title">全拠点サマリー</div>
-  <div class="summary" id="globalSummary"></div>
-  <div id="allHousesList"></div>
+  <div class="summary" id="globalSummary">
+    <div class="summary-card danger"><div class="num">10</div><div class="lbl">要補充</div></div>
+    <div class="summary-card warn"><div class="num">9</div><div class="lbl">注意</div></div>
+    <div class="summary-card ok"><div class="num">21</div><div class="lbl">OK</div></div></div>
+  <div id="allHousesList"><div class="house-mini">
+      <div class="house-mini-header">
+        <span class="house-mini-name">彩</span>
+        <span class="badge danger">要補充 2品目</span>
+      </div>
+      <div class="mini-bars">
+      <div class="mini-bar-row">
+        <span class="mini-label">ペットボトル</span>
+        <div class="mini-track"><div class="mini-fill" style="width:17%;background:#f87171"></div></div>
+      </div>
+      <div class="mini-bar-row">
+        <span class="mini-label">石鹸</span>
+        <div class="mini-track"><div class="mini-fill" style="width:30%;background:#fb923c"></div></div>
+      </div>
+      <div class="mini-bar-row">
+        <span class="mini-label">ゴミ袋</span>
+        <div class="mini-track"><div class="mini-fill" style="width:20%;background:#f87171"></div></div>
+      </div></div></div><div class="house-mini">
+      <div class="house-mini-header">
+        <span class="house-mini-name">御所西</span>
+        <span class="badge danger">要補充 2品目</span>
+      </div>
+      <div class="mini-bars">
+      <div class="mini-bar-row">
+        <span class="mini-label">枕カバー</span>
+        <div class="mini-track"><div class="mini-fill" style="width:25%;background:#fb923c"></div></div>
+      </div>
+      <div class="mini-bar-row">
+        <span class="mini-label">ペットボトル</span>
+        <div class="mini-track"><div class="mini-fill" style="width:17%;background:#f87171"></div></div>
+      </div>
+      <div class="mini-bar-row">
+        <span class="mini-label">石鹸</span>
+        <div class="mini-track"><div class="mini-fill" style="width:30%;background:#fb923c"></div></div>
+      </div>
+      <div class="mini-bar-row">
+        <span class="mini-label">ゴミ袋</span>
+        <div class="mini-track"><div class="mini-fill" style="width:20%;background:#f87171"></div></div>
+      </div></div></div><div class="house-mini">
+      <div class="house-mini-header">
+        <span class="house-mini-name">拠点D</span>
+        <span class="badge danger">要補充 2品目</span>
+      </div>
+      <div class="mini-bars">
+      <div class="mini-bar-row">
+        <span class="mini-label">枕カバー</span>
+        <div class="mini-track"><div class="mini-fill" style="width:25%;background:#fb923c"></div></div>
+      </div>
+      <div class="mini-bar-row">
+        <span class="mini-label">ペットボトル</span>
+        <div class="mini-track"><div class="mini-fill" style="width:17%;background:#f87171"></div></div>
+      </div>
+      <div class="mini-bar-row">
+        <span class="mini-label">石鹸</span>
+        <div class="mini-track"><div class="mini-fill" style="width:30%;background:#fb923c"></div></div>
+      </div>
+      <div class="mini-bar-row">
+        <span class="mini-label">ゴミ袋</span>
+        <div class="mini-track"><div class="mini-fill" style="width:20%;background:#f87171"></div></div>
+      </div></div></div><div class="house-mini">
+      <div class="house-mini-header">
+        <span class="house-mini-name">拠点E</span>
+        <span class="badge danger">要補充 2品目</span>
+      </div>
+      <div class="mini-bars">
+      <div class="mini-bar-row">
+        <span class="mini-label">枕カバー</span>
+        <div class="mini-track"><div class="mini-fill" style="width:25%;background:#fb923c"></div></div>
+      </div>
+      <div class="mini-bar-row">
+        <span class="mini-label">ペットボトル</span>
+        <div class="mini-track"><div class="mini-fill" style="width:17%;background:#f87171"></div></div>
+      </div>
+      <div class="mini-bar-row">
+        <span class="mini-label">石鹸</span>
+        <div class="mini-track"><div class="mini-fill" style="width:30%;background:#fb923c"></div></div>
+      </div>
+      <div class="mini-bar-row">
+        <span class="mini-label">ゴミ袋</span>
+        <div class="mini-track"><div class="mini-fill" style="width:20%;background:#f87171"></div></div>
+      </div></div></div><div class="house-mini">
+      <div class="house-mini-header">
+        <span class="house-mini-name">清</span>
+        <span class="badge danger">要補充 2品目</span>
+      </div>
+      <div class="mini-bars">
+      <div class="mini-bar-row">
+        <span class="mini-label">枕カバー</span>
+        <div class="mini-track"><div class="mini-fill" style="width:25%;background:#fb923c"></div></div>
+      </div>
+      <div class="mini-bar-row">
+        <span class="mini-label">ペットボトル</span>
+        <div class="mini-track"><div class="mini-fill" style="width:17%;background:#f87171"></div></div>
+      </div>
+      <div class="mini-bar-row">
+        <span class="mini-label">石鹸</span>
+        <div class="mini-track"><div class="mini-fill" style="width:30%;background:#fb923c"></div></div>
+      </div>
+      <div class="mini-bar-row">
+        <span class="mini-label">ゴミ袋</span>
+        <div class="mini-track"><div class="mini-fill" style="width:20%;background:#f87171"></div></div>
+      </div></div></div></div>
 </div>
 
 <div class="single-view hidden" id="singleView">
@@ -454,5 +558,6 @@ function render() {
 document.getElementById('allHousesList').innerHTML = '<div class="loading">データを読み込み中...</div>';
 loadFromSheets();
 </script>
-</body>
-</html>
+
+
+</body></html>
