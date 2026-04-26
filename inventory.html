@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ja" style="background:#0f0f0f;">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>在庫管理 — ゲストハウス</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f0f; --surface: #1a1a1a; --surface2: #242424;
+    --border: #2e2e2e; --text: #f0ece4; --muted: #9a9690;
+    --accent: #e8c547; --ok: #4ade80; --warn: #fb923c; --danger: #f87171;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #0f0f0f !important; color: #f0ece4 !important; font-family: 'Noto Sans JP', sans-serif; min-height: 100vh; }
+  body { padding: 16px; }
+
+  header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+  header h1 { font-family: 'Space Mono', monospace; font-size: 18px; letter-spacing: 0.05em; color: var(--accent); }
+  #last-updated { font-size: 12px; color: var(--muted); }
+  .settings-btn { margin-left: auto; padding: 6px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; color: #f0ece4; font-size: 12px; cursor: pointer; }
+
+  .house-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 20px; scrollbar-width: none; }
+  .house-tabs::-webkit-scrollbar { display: none; }
+  .tab { flex-shrink: 0; padding: 7px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; font-size: 13px; color: #9a9690; cursor: pointer; position: relative; }
+  .tab.active { background: var(--accent); color: #0f0f0f; border-color: var(--accent); font-weight: 700; }
+  .tab .alert-dot { position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; border-radius: 50%; }
+
+  .summary { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 20px; }
+  .summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; text-align: center; }
+  .summary-card .num { font-family: 'Space Mono', monospace; font-size: 22px; font-weight: 700; }
+  .summary-card .lbl { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .summary-card.danger .num { color: var(--danger); }
+  .summary-card.warn   .num { color: var(--warn); }
+  .summary-card.ok     .num { color: var(--ok); }
+
+  .section-title { font-size: 11px; letter-spacing: 0.1em; color: #c0bcb4; text-transform: uppercase; margin-bottom: 12px; }
+
+  .bars { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+  .bar-label { width: 80px; font-size: 12px; font-weight: 700; color: #f0ece4 !important; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-track { flex: 1; height: 18px; background: var(--surface2); border-radius: 4px; overflow: hidden; position: relative; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s cubic-bezier(.4,0,.2,1); }
+  .bar-row:hover .bar-fill { filter: brightness(1.15); }
+  .threshold-line { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,0.2); z-index: 2; }
+  .bar-value { font-family: 'Space Mono', monospace; font-size: 11px; width: 40px; text-align: right; flex-shrink: 0; color: #f0ece4 !important; }
+  .bar-unit { color: #9a9690; font-size: 9px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  .edit-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 20px; display: none; }
+  .edit-panel.open { display: block; }
+  .edit-panel h3 { font-size: 14px; margin-bottom: 14px; color: #f0ece4; }
+  .edit-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .edit-row label { font-size: 12px; width: 80px; flex-shrink: 0; color: #9a9690; }
+  .edit-row input[type=range] { flex: 1; accent-color: var(--accent); }
+  .edit-row .val { font-family: 'Space Mono', monospace; font-size: 12px; width: 40px; text-align: right; color: #f0ece4; }
+  .edit-close { margin-top: 10px; padding: 8px 16px; background: var(--accent); color: #0f0f0f; border: none; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer; width: 100%; }
+
+  .all-view { display: none; }
+  .all-view.active { display: block; }
+  .single-view { display: block; }
+  .single-view.hidden { display: none; }
+
+  .house-mini { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px; cursor: pointer; }
+  .house-mini-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .house-mini-name { font-size: 13px; font-weight: 700; color: #f0ece4; }
+  .badge { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-family: 'Space Mono', monospace; }
+  .badge.danger { background: rgba(248,113,113,0.15); color: var(--danger); }
+  .badge.warn   { background: rgba(251,146,60,0.15); color: var(--warn); }
+  .badge.ok     { background: rgba(74,222,128,0.15); color: var(--ok); }
+  .mini-bars { display: flex; flex-direction: column; gap: 5px; }
+  .mini-bar-row { display: flex; align-items: center; gap: 8px; }
+  .mini-label { font-size: 10px; color: #9a9690; width: 60px; flex-shrink: 0; }
+  .mini-track { flex: 1; height: 8px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .mini-fill { height: 100%; border-radius: 3px; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; padding: 20px; overflow-y: auto; }
+  .modal-overlay.open { display: flex; align-items: flex-start; justify-content: center; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; width: 100%; max-width: 420px; margin-top: 20px; }
+  .modal h2 { font-size: 15px; margin-bottom: 16px; color: var(--accent); }
+  .modal-section { margin-bottom: 20px; }
+  .modal-section h3 { font-size: 11px; letter-spacing: 0.1em; color: #9a9690; text-transform: uppercase; margin-bottom: 10px; }
+  .setting-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .setting-row input[type=text] { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: #f0ece4; font-family: 'Noto Sans JP', sans-serif; font-size: 13px; padding: 7px 10px; outline: none; }
+  .setting-row input[type=text]:focus { border-color: var(--accent); }
+  .del-btn { width: 28px; height: 28px; background: rgba(248,113,113,0.15); border: none; border-radius: 6px; color: var(--danger); font-size: 14px; cursor: pointer; flex-shrink: 0; }
+  .add-btn { width: 100%; padding: 8px; background: var(--surface2); border: 1px dashed var(--border); border-radius: 6px; color: #9a9690; font-size: 13px; cursor: pointer; }
+  .modal-actions { display: flex; gap: 8px; margin-top: 4px; }
+  .modal-save { flex: 1; padding: 10px; background: var(--accent); color: #0f0f0f; border: none; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer; }
+  .modal-cancel { padding: 10px 16px; background: var(--surface2); color: #9a9690; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; cursor: pointer; }
+
+  .loading { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
+  .saving-badge { position: fixed; bottom: 20px; right: 20px; background: var(--accent); color: #0f0f0f; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; display: none; z-index: 200; }
+  .saving-badge.show { display: block; }
+
+  footer { margin-top: 24px; text-align: center; font-size: 11px; color: var(--muted); padding-top: 14px; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>STOCK MGMT</h1>
+  <span id="last-updated">読込中...</span>
+  <button class="settings-btn" onclick="openSettings()">⚙ 設定</button>
+</header>
+
+<div class="saving-badge" id="savingBadge">保存中...</div>
+
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <h2>⚙ 設定</h2>
+    <div class="modal-section">
+      <h3>拠点名</h3>
+      <div id="houseNameRows"></div>
+    </div>
+    <div class="modal-section">
+      <h3>品目</h3>
+      <div id="itemNameRows"></div>
+      <button class="add-btn" onclick="addItemRow()">＋ 品目を追加</button>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeSettings()">キャンセル</button>
+      <button class="modal-save" onclick="saveSettings()">✓ 保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="house-tabs" id="houseTabs"></div>
+
+<div class="all-view active" id="allView">
+  <div class="section-title">全拠点サマリー</div>
+  <div class="summary" id="globalSummary"></div>
+  <div id="allHousesList"></div>
+</div>
+
+<div class="single-view hidden" id="singleView">
+  <div class="summary" id="houseSummary"></div>
+  <div class="section-title" id="houseTitle"></div>
+  <div class="bars" id="barsContainer"></div>
+  <div class="edit-panel" id="editPanel">
+    <h3 id="editTitle"></h3>
+    <div class="edit-row">
+      <label>現在の数</label>
+      <input type="range" id="editCurrent" min="0" max="100" step="1" oninput="updateEdit()">
+      <span class="val" id="editCurrentVal"></span>
+    </div>
+    <div class="edit-row">
+      <label>最大数</label>
+      <input type="range" id="editMax" min="5" max="200" step="5" oninput="updateEdit()">
+      <span class="val" id="editMaxVal"></span>
+    </div>
+    <div class="edit-row">
+      <label>警告ライン</label>
+      <input type="range" id="editWarn" min="5" max="80" step="5" oninput="updateEdit()">
+      <span class="val" id="editWarnVal"></span>
+    </div>
+    <button class="edit-close" onclick="closeEdit()">✓ 保存して閉じる</button>
+  </div>
+</div>
+
+<footer>バーをタップで在庫編集 · 赤=危険 / 橙=注意 / 緑=OK</footer>
+
+<script>
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzt81qsF-OwdF5vfe-vp46r7mLQd7TeSnuUXz6mO4PgWEl44zSi7C4aPwMOJLGLfUXeAw/exec';
+
+// ---- デフォルトデータ（初回のみ使用）----
+const DEFAULT_HOUSES = [
+  { id:0, name:"拠点A" }, { id:1, name:"拠点B" }, { id:2, name:"拠点C" },
+  { id:3, name:"拠点D" }, { id:4, name:"拠点E" },
+];
+const DEFAULT_ITEMS = [
+  { name:"シーツ",       max:40,  warn:40, current:32 },
+  { name:"枕カバー",     max:40,  warn:40, current:10 },
+  { name:"タオル",       max:60,  warn:35, current:45 },
+  { name:"ペットボトル", max:48,  warn:40, current:8  },
+  { name:"シャンプー",   max:30,  warn:40, current:25 },
+  { name:"石鹸",         max:50,  warn:30, current:15 },
+  { name:"トイレットP",  max:80,  warn:30, current:60 },
+  { name:"ゴミ袋",       max:100, warn:25, current:20 },
+];
+
+let houses    = DEFAULT_HOUSES.map(h => ({...h}));
+let itemDefs  = DEFAULT_ITEMS.map(i => ({...i}));
+let inventory = houses.map(() => DEFAULT_ITEMS.map(item => ({...item})));
+let currentHouse = null;
+let editingItem = null;
+let saveTimer = null;
+
+// ---- Google Sheets 読込 ----
+async function loadFromSheets() {
+  try {
+    const res = await fetch(GAS_URL + '?action=load');
+    const rows = await res.json();
+    if (!rows || rows.length === 0) {
+      await saveToSheets();
+      return;
+    }
+    const houseIds = [...new Set(rows.map(r => r.houseId))].sort();
+    const itemNames = [...new Set(rows.map(r => r.name))];
+
+    houses = houseIds.map((id, i) => ({ id: i, name: String(id) }));
+    itemDefs = itemNames.map(name => {
+      const sample = rows.find(r => r.name === name);
+      return { name, max: Number(sample.max), warn: Number(sample.warn), current: Number(sample.current) };
+    });
+    inventory = houses.map(h => {
+      return itemDefs.map(def => {
+        const row = rows.find(r => r.houseId === h.name && r.name === def.name);
+        return row
+          ? { name: def.name, max: Number(row.max), warn: Number(row.warn), current: Number(row.current) }
+          : { ...def };
+      });
+    });
+  } catch(e) {
+    console.error('load error', e);
+  }
+  render();
+  updateTimestamp();
+}
+
+// ---- Google Sheets 保存 ----
+async function saveToSheets() {
+  showSaving(true);
+  const rows = [];
+  houses.forEach(h => {
+    inventory[h.id].forEach(item => {
+      rows.push({ houseId: h.name, name: item.name, current: item.current, max: item.max, warn: item.warn });
+    });
+  });
+  try {
+    await fetch(GAS_URL + '?action=save&data=' + encodeURIComponent(JSON.stringify(rows)));
+  } catch(e) {
+    console.error('save error', e);
+  }
+  showSaving(false);
+}
+
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => saveToSheets(), 1500);
+}
+
+function showSaving(on) {
+  document.getElementById('savingBadge').textContent = on ? '保存中...' : '✓ 保存済み';
+  document.getElementById('savingBadge').classList.add('show');
+  if (!on) setTimeout(() => document.getElementById('savingBadge').classList.remove('show'), 1500);
+}
+
+function updateTimestamp() {
+  const now = new Date();
+  document.getElementById('last-updated').textContent = `更新: ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+}
+
+// ---- Helpers ----
+function pct(item) { return Math.min(100, Math.round(item.current / item.max * 100)); }
+function status(item) { const p = pct(item); return p <= 20 ? 'danger' : p <= item.warn ? 'warn' : 'ok'; }
+function clr(s) { return s==='danger' ? '#f87171' : s==='warn' ? '#fb923c' : '#4ade80'; }
+function countByStatus(hi) {
+  const inv = inventory[hi];
+  return { danger: inv.filter(i=>status(i)==='danger').length, warn: inv.filter(i=>status(i)==='warn').length, ok: inv.filter(i=>status(i)==='ok').length };
+}
+function worstStatus(hi) { const c=countByStatus(hi); return c.danger>0?'danger':c.warn>0?'warn':'ok'; }
+function statusLabel(s) { return s==='danger'?'要補充':s==='warn'?'注意':'OK'; }
+
+// ---- Tabs ----
+function renderTabs() {
+  const el = document.getElementById('houseTabs');
+  el.innerHTML = '';
+  const all = document.createElement('div');
+  all.className = 'tab' + (currentHouse===null?' active':'');
+  all.textContent = '全拠点';
+  all.onclick = () => { currentHouse=null; render(); };
+  el.appendChild(all);
+  houses.forEach(h => {
+    const t = document.createElement('div');
+    t.className = 'tab' + (currentHouse===h.id?' active':'');
+    t.textContent = h.name;
+    const ws = worstStatus(h.id);
+    if (ws !== 'ok') {
+      const dot = document.createElement('div');
+      dot.className = 'alert-dot';
+      dot.style.background = clr(ws);
+      t.appendChild(dot);
+    }
+    t.onclick = () => { currentHouse=h.id; closeEdit(); render(); };
+    el.appendChild(t);
+  });
+}
+
+// ---- All view ----
+function renderAll() {
+  document.getElementById('allView').classList.add('active');
+  document.getElementById('singleView').classList.add('hidden');
+  let gd=0,gw=0,go=0;
+  houses.forEach(h => { const c=countByStatus(h.id); gd+=c.danger; gw+=c.warn; go+=c.ok; });
+  document.getElementById('globalSummary').innerHTML = `
+    <div class="summary-card danger"><div class="num">${gd}</div><div class="lbl">要補充</div></div>
+    <div class="summary-card warn"><div class="num">${gw}</div><div class="lbl">注意</div></div>
+    <div class="summary-card ok"><div class="num">${go}</div><div class="lbl">OK</div></div>`;
+  const list = document.getElementById('allHousesList');
+  list.innerHTML = '';
+  houses.forEach(h => {
+    const inv = inventory[h.id];
+    const c = countByStatus(h.id);
+    const ws = worstStatus(h.id);
+    const alertItems = inv.filter(i => status(i) !== 'ok');
+    const miniHTML = alertItems.slice(0,4).map(item => `
+      <div class="mini-bar-row">
+        <span class="mini-label">${item.name}</span>
+        <div class="mini-track"><div class="mini-fill" style="width:${pct(item)}%;background:${clr(status(item))}"></div></div>
+      </div>`).join('') || `<div style="font-size:11px;color:#4ade80">全品目 在庫OK ✓</div>`;
+    const card = document.createElement('div');
+    card.className = 'house-mini';
+    card.onclick = () => { currentHouse=h.id; render(); };
+    card.innerHTML = `
+      <div class="house-mini-header">
+        <span class="house-mini-name">${h.name}</span>
+        <span class="badge ${ws}">${statusLabel(ws)}${c.danger>0?' '+c.danger+'品目':''}</span>
+      </div>
+      <div class="mini-bars">${miniHTML}</div>`;
+    list.appendChild(card);
+  });
+}
+
+// ---- Single view ----
+function renderSingle(hi) {
+  document.getElementById('allView').classList.remove('active');
+  document.getElementById('singleView').classList.remove('hidden');
+  const inv = inventory[hi];
+  const h = houses[hi];
+  const c = countByStatus(hi);
+  document.getElementById('houseTitle').textContent = h.name + ' — 在庫状況';
+  document.getElementById('houseSummary').innerHTML = `
+    <div class="summary-card danger"><div class="num">${c.danger}</div><div class="lbl">要補充</div></div>
+    <div class="summary-card warn"><div class="num">${c.warn}</div><div class="lbl">注意</div></div>
+    <div class="summary-card ok"><div class="num">${c.ok}</div><div class="lbl">OK</div></div>`;
+  const container = document.getElementById('barsContainer');
+  container.innerHTML = '';
+  inv.forEach((item, i) => {
+    const s = status(item);
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+    row.onclick = () => openEdit(hi, i);
+    row.innerHTML = `
+      <span class="bar-label">${item.name}</span>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${pct(item)}%;background:${clr(s)}"></div>
+        <div class="threshold-line" style="left:${item.warn}%"></div>
+      </div>
+      <span class="bar-value">${item.current}<span class="bar-unit">/${item.max}</span></span>
+      <div class="status-dot" style="background:${clr(s)}"></div>`;
+    container.appendChild(row);
+  });
+}
+
+// ---- Edit panel ----
+function openEdit(hi, ii) {
+  editingItem = { hi, ii };
+  const item = inventory[hi][ii];
+  document.getElementById('editTitle').textContent = '✏️ ' + item.name;
+  document.getElementById('editCurrent').max = item.max;
+  document.getElementById('editCurrent').value = item.current;
+  document.getElementById('editMax').value = item.max;
+  document.getElementById('editWarn').value = item.warn;
+  updateEditDisplay();
+  document.getElementById('editPanel').classList.add('open');
+  document.getElementById('editPanel').scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+function updateEdit() {
+  const max = parseInt(document.getElementById('editMax').value);
+  const cur = document.getElementById('editCurrent');
+  cur.max = max;
+  if (parseInt(cur.value) > max) cur.value = max;
+  updateEditDisplay();
+  if (editingItem) {
+    const item = inventory[editingItem.hi][editingItem.ii];
+    item.current = parseInt(cur.value);
+    item.max = max;
+    item.warn = parseInt(document.getElementById('editWarn').value);
+    renderSingle(editingItem.hi);
+    renderTabs();
+    document.getElementById('editPanel').classList.add('open');
+    scheduleSave();
+  }
+}
+function updateEditDisplay() {
+  document.getElementById('editCurrentVal').textContent = document.getElementById('editCurrent').value;
+  document.getElementById('editMaxVal').textContent = document.getElementById('editMax').value;
+  document.getElementById('editWarnVal').textContent = document.getElementById('editWarn').value + '%';
+}
+function closeEdit() { editingItem=null; document.getElementById('editPanel').classList.remove('open'); }
+
+// ---- Settings ----
+function openSettings() {
+  const hnr = document.getElementById('houseNameRows');
+  hnr.innerHTML = '';
+  houses.forEach((h, i) => {
+    const row = document.createElement('div');
+    row.className = 'setting-row';
+    row.innerHTML = `<input type="text" value="${h.name}" data-house="${i}" placeholder="拠点名">`;
+    hnr.appendChild(row);
+  });
+  const inr = document.getElementById('itemNameRows');
+  inr.innerHTML = '';
+  itemDefs.forEach((item, i) => addItemRow(item.name, i));
+  document.getElementById('settingsModal').classList.add('open');
+}
+function addItemRow(name='', idx=null) {
+  const inr = document.getElementById('itemNameRows');
+  const row = document.createElement('div');
+  row.className = 'setting-row';
+  row.dataset.itemIdx = idx !== null ? String(idx) : 'new_' + Date.now();
+  row.innerHTML = `<input type="text" value="${name}" placeholder="品目名"><button class="del-btn" onclick="this.parentElement.remove()">✕</button>`;
+  inr.appendChild(row);
+}
+function saveSettings() {
+  document.querySelectorAll('#houseNameRows input').forEach(inp => {
+    const i = parseInt(inp.dataset.house);
+    if (!isNaN(i) && inp.value.trim()) houses[i].name = inp.value.trim();
+  });
+  const rows = document.querySelectorAll('#itemNameRows .setting-row');
+  const newDefs = [];
+  rows.forEach(row => {
+    const name = row.querySelector('input').value.trim();
+    if (!name) return;
+    const idxAttr = row.dataset.itemIdx;
+    const origIdx = !idxAttr.startsWith('new_') ? parseInt(idxAttr) : null;
+    newDefs.push(origIdx !== null && itemDefs[origIdx] ? { ...itemDefs[origIdx], name } : { name, max:30, warn:40, current:20 });
+  });
+  const oldDefs = [...itemDefs];
+  itemDefs.length = 0;
+  newDefs.forEach(d => itemDefs.push(d));
+  houses.forEach((h, hi) => {
+    inventory[hi] = newDefs.map((def, di) => {
+      const old = inventory[hi] ? inventory[hi].find(it => it.name === (oldDefs[di]||{}).name) : null;
+      return old ? { ...old, name: def.name } : { ...def };
+    });
+  });
+  closeSettings();
+  render();
+  saveToSheets();
+}
+function closeSettings() { document.getElementById('settingsModal').classList.remove('open'); }
+document.getElementById('settingsModal').addEventListener('click', function(e) { if (e.target===this) closeSettings(); });
+
+// ---- Render ----
+function render() {
+  renderTabs();
+  if (currentHouse===null) renderAll(); else renderSingle(currentHouse);
+  updateTimestamp();
+}
+
+// ---- 起動 ----
+document.getElementById('allHousesList').innerHTML = '<div class="loading">データを読み込み中...</div>';
+loadFromSheets();
+</script>
+</body>
+</html>
